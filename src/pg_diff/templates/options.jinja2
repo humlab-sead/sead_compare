@@ -1,0 +1,49 @@
+{
+    "{{ project or "development" }}": {
+        "sourceClient": {
+            "host": "{{ source.get("host") }}",
+            "port": "{{ source.get("port", 5432) }}",
+            "database": "{{ source.get("database", None) }}",
+            "user": "{{ source.get("user", None) }}",
+            "applicationName": "{{ application_name }}"
+        },
+        "targetClient": {
+            "host": "{{ target.get("host") }}",
+            "port": "{{ target.get("port", 5432) }}",
+            "database": "{{ target.get("database", None) }}",
+            "user": "{{ target.get("user", None) }}",
+            "applicationName": "{{ application_name }}"
+        },
+        "compareOptions": {
+            "author": "{{ author or "Humlab" }}",
+            "outputDirectory": "{{ outputDirectory or "./output" }}",
+            "getAuthorFromGit": false,
+            "schemaCompare": {
+                "namespaces": [
+                    {% for namespace in namespaces %}"{{ namespace }}"{{ ", " if not loop.last else "" }}{% endfor %}
+                ],
+                "dropMissingTable": false,
+                "dropMissingView": false,
+                "dropMissingFunction": false,
+                "dropMissingAggregate": false,
+                "roles": [{% for role in roles %}"{{ role }}"{{ ", " if not loop.last else "" }}{% endfor %}]
+            },
+            "dataCompare": {
+                "enable": {{ "true" if data_compare else "false" }},
+                "tables": [
+                    {% for schema, tables in data_tables.items() %}
+                        {% for table in tables %}{
+                            "tableSchema": "{{ schema }}", "tableName": "{{ table['table_name'] }}", "tableKeyFields": [ {% for key in table['primary_key'].split(",") %} "{{ key }}"{{ "," if not loop.last else "" }}{% endfor %} ]
+                        }{{ "," if not loop.last else "" }}
+                        {% endfor %}{{ "," if not loop.last else "" }}
+                    {% endfor %}
+                ]
+            }
+        },
+        "migrationOptions": {
+            "patchesDirectory": "db_migration",
+            "historyTableName": "migrations",
+            "historyTableSchema": "public"
+        }
+    }
+}

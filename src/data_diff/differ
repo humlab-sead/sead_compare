@@ -1,0 +1,91 @@
+#!/bin/bash
+
+if [[ -f ".env" ]]; then
+    source .env set
+fi
+
+dbhost=humlabseadserv.srv.its.umu.se
+dbuser=humlab_admin
+dbpass=Vua9VagZ
+source_database=
+target_database=
+
+
+usage_message=$(cat <<EOF
+usage: differ OPTIONS...
+
+    --host SERVER                   Target/source host.
+    --user USERNAME                 Target/source username.
+    --source DBNAME                 Source database name. Mandatory.
+    --target DBNAME                 Target database name. Mandatory.
+
+EOF
+)
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+
+    case $key in
+        --host)
+            dbhost="$2"; shift; shift
+        ;;
+        --user)
+            dbuser="$2"; shift; shift
+        ;;
+        --source)
+            source_database="$2"; shift; shift
+        ;;
+        --target)
+            target_database="$2"; shift; shift
+        ;;
+        *)
+            POSITIONAL+=("$1") # save it in an array for later
+            shift
+        ;;
+    esac
+done
+
+
+function usage() {
+
+    echo "$usage_message"
+}
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+
+function verify_options()
+{
+
+    if [ "$dbhost" == "" ]; then
+        echo "error: server not specified";
+        exit 64
+    fi
+
+    if [ "$dbuser" == "" ]; then
+        echo "error: database user not specified"
+        usage
+        exit 64
+    fi
+
+
+    if [ "$source_database" == "" ]; then
+        echo "error: you need to specify a source database";
+        usage
+        exit 64
+    fi
+
+    if [ "$target_database" == "" ]; then
+        echo "error: you need to specify a target database";
+        usage
+        exit 64
+    fi
+
+
+}
+
+verify_options
+
+echo sead-differ --source-uri "postgresql://${dbuser}:${dbpass}@${dbhost}/$source_database" --target-uri "postgresql://${dbuser}:${dbpass}@${dbhost}/$target_database" --break-on-diff
